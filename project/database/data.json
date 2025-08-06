@@ -1,0 +1,92 @@
+[
+  {
+    "JobA": {
+      "global-parameters": {
+        "total-energy": 18,
+        "period-hours":20,
+        "total-space": 10
+      },
+      "center-list":[
+        {
+          "center-id":"zoneA",
+          "center-area":10
+      
+      }
+      ],
+      "jobs-list":[
+        {
+          "job-name":"Cassava Grater Fabrications",
+          "job-time": 18,
+          "job-area": 2,
+          "job-deadline":20
+        }
+
+      ],
+      "machine-list": [
+        {
+          "machine-name": "Cutting Machine",
+          "machine-power": 7.5,
+          "machine-hours": 8,
+          "machine-cost":1697.50
+        },
+        {
+          "machine-name": "Welding Machine",
+          "machine-power": 10,
+          "machine-hours": 4,
+          "machine-cost":2250
+        },
+         {
+          "machine-name": "Griding Machine",
+          "machine-power": 5,
+          "machine-hours": 2,
+          "machine-cost":1125
+        },
+         {
+          "machine-name": "Drilling Machine",
+          "machine-power": 3,
+          "machine-hours": 2,
+          "machine-cost":675
+        },
+         {
+          "machine-name": "Lathe Machine",
+          "machine-power": 15,
+          "machine-hours": 2,
+          "machine-cost":3375
+        },
+         {
+          "machine-name": "Bending Machine",
+          "machine-power": 15,
+          "machine-hours": 1,
+          "machine-cost":3375
+        },
+         {
+          "machine-name": "Perforating Machine",
+          "machine-power": 7.5,
+          "machine-hours": 2,
+          "machine-cost":1687.50
+        },
+         {
+          "machine-name": "Press Machine",
+          "machine-power": 20,
+          "machine-hours": 1,
+          "machine-cost":4500
+        },
+         {
+          "machine-name": "Polishing Machine",
+          "machine-power": 3,
+          "machine-hours": 1,
+          "machine-cost":675
+        },
+         {
+          "machine-name": "Assembly Tools",
+          "machine-power": 0.5,
+          "machine-hours": 2,
+          "machine-cost":112.50
+        }
+
+
+      ]
+    }
+  }
+  
+]

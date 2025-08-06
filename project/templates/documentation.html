@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation - Energy Optimization in Job Shops</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include MathJax for LaTeX rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Documentation Content -->
+  <div class="container mx-auto p-6">
+    <header class="text-center">
+      <h1 class="text-4xl font-bold mb-4">Documentation - Energy Optimization in Job Shops</h1>
+      <a href="/" class="text-blue-600 font-bold text-lg">Back to Home</a>
+    </header>
+
+    <!-- Introduction Section -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Introduction</h2>
+      <p>This system optimizes energy consumption in Production Planning and Control (PPC) for job shops by assigning jobs to machines while considering energy costs, production scheduling, and spatial constraints. It uses a mathematical model solved via linear programming (PuLP) to minimize total energy consumption, integrated into a Flask web application for user interaction.</p>
+    </section>
+
+    <!-- Mathematical Model -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Mathematical Model for Energy Optimization</h2>
+
+      <h3 class="text-xl font-semibold">Objective</h3>
+      <p>Minimize total energy consumption \( E \) while ensuring effective PPC and optimal use of available space.</p>
+
+      <h3 class="text-xl font-semibold">Decision Variables</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li>\( x_{ij} \): Binary variable (1 if job \( j \) is assigned to machine \( i \), 0 otherwise).</li>
+        <li>\( s_j \): Start time of job \( j \).</li>
+        <li>\( t_j \): Processing time of job \( j \).</li>
+        <li>\( p_i \): Power consumption rate of machine \( i \) (kWh per time unit).</li>
+        <li>\( A_{ij} \): Area occupied by machine \( i \) when processing job \( j \).</li>
+        <li>\( S \): Total available space.</li>
+        <li>\( E \): Total energy consumed.</li>
+        <li>\( c_j \): Completion time of job \( j \), where \( c_j = s_j + t_j \).</li>
+      </ul>
+
+      <h3 class="text-xl font-semibold">Objective Function</h3>
+      <p>Minimize the total energy consumed, calculated as the product of power consumption rate, processing time, and assignment:</p>
+      <div class="bg-gray-50 p-4 rounded text-sm">
+        \[
+        \text{Minimize } E = \sum_i \sum_j x_{ij} \cdot p_i \cdot t_j
+        \]
+      </div>
+
+      <h3 class="text-xl font-semibold">Constraints</h3>
+      <ol class="list-decimal pl-6 space-y-4">
+        <li>
+          <strong>Assignment Constraint:</strong> Each job must be assigned to exactly one machine.
+          <div class="bg-gray-50 p-4 rounded text-sm">
+            \[
+            \sum_i x_{ij} = 1 \quad \forall j
+            \]
+          </div>
+        </li>
+        <li>
+          <strong>Machine Capacity Constraint:</strong> A machine can process only one job at a time. For jobs \( j \) and \( k \) assigned to the same machine \( i \), their processing times must not overlap, enforced using a big-M formulation:
+          <div class="bg-gray-50 p-4 rounded text-sm">
+            \[
+            s_j + t_j \leq s_k + M \cdot (1 - x_{ij}) + M \cdot (1 - x_{ik}) + M \cdot y_{jk} \quad \forall i, j \neq k
+            \]
+            \[
+            s_k + t_k \leq s_j + M \cdot (1 - x_{ij}) + M \cdot (1 - x_{ik}) + M \cdot (1 - y_{jk}) \quad \forall i, j \neq k
+            \]
+            <p>where \( y_{jk} \) is a binary variable (1 if job \( j \) precedes job \( k \), 0 otherwise), and \( M \) is a large constant (e.g., sum of all processing times).</p>
+          </div>
+        </li>
+        <li>
+          <strong>Space Constraint:</strong> The total area occupied by machines processing jobs at any time \( t \) must not exceed the available space \( S \). For simplicity, the area is assumed occupied for the entire job duration:
+          <div class="bg-gray-50 p-4 rounded text-sm">
+            \[
+            \sum_i \sum_{j \in J_t} x_{ij} \cdot A_{ij} \leq S \quad \forall t
+            \]
+            <p>where \( J_t = \{ j \mid s_j \leq t < s_j + t_j \} \) is the set of jobs being processed at time \( t \). To make this tractable, time is discretized, and checks are performed at key points (start and end times of jobs).</p>
+          </div>
+        </li>
+        <li>
+          <strong>Deadline Constraint:</strong> Each job must complete by its deadline \( D_j \):
+          <div class="bg-gray-50 p-4 rounded text-sm">
+            \[
+            s_j + t_j \leq D_j \quad \forall j
+            \]
+          </div>
+        </li>
+        <li>
+          <strong>Non-negativity and Binary Constraints:</strong>
+          <div class="bg-gray-50 p-4 rounded text-sm">
+            \[
+            s_j \geq 0 \quad \forall j
+            \]
+            \[
+            x_{ij} \in \{0, 1\} \quad \forall i, j
+            \]
+            \[
+            y_{jk} \in \{0, 1\} \quad \forall j \neq k
+            \]
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Flask Integration -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Integration with Flask Application</h2>
+      <p>The mathematical model is implemented in a Flask web application using the PuLP library to solve the linear programming problem. The application:</p>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>Accepts Input:</strong> Machine and job data via a POST request to the `/optimize` endpoint, including machine power, cost, max time, job processing time, and optional lead time (deadline).</li>
+        <li><strong>Formulates the Problem:</strong> Defines decision variables, objective function, and constraints as described above.</li>
+        <li><strong>Solves Optimization:</strong> Uses PuLP to find the optimal job-machine assignments and start times that minimize energy consumption.</li>
+        <li><strong>Handles Space Constraints:</strong> Simplifies the space constraint by limiting the total area of assigned machine-job pairs, making it computationally feasible for a web application.</li>
+        <li><strong>Returns Results:</strong> Provides optimized schedules, job assignments, energy costs, and total cost in JSON format for display in the front-end.</li>
+      </ul>
+      <p>The Flask application replaces a simpler round-robin assignment with this sophisticated optimization, ensuring energy efficiency and adherence to spatial and scheduling constraints.</p>
+    </section>
+
+    <!-- Input Requirements -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Input Requirements</h2>
+      <p>Users must provide the following input parameters via the web interface:</p>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>Machine Name:</strong> Identifier for each machine (e.g., "M1").</li>
+        <li><strong>Power (kW):</strong> Power consumption of the machine.</li>
+        <li><strong>Max Time (hrs):</strong> Maximum operating time of the machine.</li>
+        <li><strong>Cost (₦/kWh):</strong> Energy cost per unit for the machine.</li>
+        <li><strong>Job Name:</strong> Identifier for each job (e.g., "J1").</li>
+        <li><strong>Processing Time (hrs):</strong> Time required to complete the job.</li>
+        <li><strong>Priority (optional):</strong> Priority level for scheduling (currently unused).</li>
+        <li><strong>Lead Time (hrs, optional):</strong> Deadline for job completion.</li>
+        <li><strong>Total Space (optional):</strong> Available space (defaults to 1000 sq units).</li>
+      </ul>
+      <p>Area parameters for machines and jobs are assumed (default: 50 sq units each) unless specified.</p>
+    </section>
+
+    <!-- User Guide -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">User Guide</h2>
+      <h3 class="text-xl font-semibold">Step-by-Step Instructions</h3>
+      <ol class="list-decimal pl-6 space-y-2">
+        <li><strong>Enter Data:</strong> Use the "Add Machine" and "Add Job" buttons to input machine and job details. Fill in required fields (name, power, max time, cost for machines; name, processing time for jobs) and optional fields (priority, lead time).</li>
+        <li><strong>Submit:</strong> Click the "Submit" button to send data to the `/optimize` endpoint.</li>
+        <li><strong>View Results:</strong> The system displays optimized job assignments, start times, energy costs, and total cost, along with pie, bar, and line charts visualizing cost distribution.</li>
+        <li><strong>Download PDF:</strong> Click "Download as PDF" to export results, including text output and charts.</li>
+      </ol>
+      <h3 class="text-xl font-semibold">Interactive Features</h3>
+      <p>Users can dynamically add, edit, or remove machines and jobs using the web interface. The responsive design ensures usability on desktop and mobile devices.</p>
+    </section>
+
+    <!-- Results & Outputs -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Results & Outputs</h2>
+      <p>The system provides:</p>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>Text Output:</strong> Details of job assignments (job name, machine name, start time, energy cost).</li>
+        <li><strong>Job Costs:</strong> Breakdown of costs per job, including job name, machine name, and cost (₦).</li>
+        <li><strong>Total Cost:</strong> Sum of all job costs.</li>
+        <li><strong>Charts:</strong>
+          <ul class="list-circle pl-6">
+            <li><strong>Pie Chart:</strong> Cost distribution across jobs.</li>
+            <li><strong>Bar Chart:</strong> Individual job costs.</li>
+            <li><strong>Line Graph:</strong> Cost trend across jobs.</li>
+          </ul>
+        </li>
+        <li><strong>PDF Export:</strong> A downloadable report with results and charts.</li>
+      </ul>
+    </section>
+
+    <!-- Technical Details -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Technical Details</h2>
+      <h3 class="text-xl font-semibold">Technology Stack</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>Python:</strong> Backend with Flask and PuLP for optimization.</li>
+        <li><strong>JavaScript:</strong> Frontend interactivity, Chart.js for charts, html2canvas and jsPDF for PDF export.</li>
+        <li><strong>Tailwind CSS:</strong> Responsive styling.</li>
+        <li><strong>MathJax:</strong> LaTeX rendering for mathematical expressions.</li>
+      </ul>
+      <h3 class="text-xl font-semibold">Code Overview</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>app.py:</strong> Flask backend handling optimization logic.</li>
+        <li><strong>index1.html:</strong> Frontend interface for input and results display.</li>
+        <li><strong>documentation.html:</strong> This documentation page.</li>
+        <li><strong>Static Files:</strong> Chart.js, html2canvas, jsPDF, and Tailwind CSS for frontend functionality.</li>
+      </ul>
+      <h3 class="text-xl font-semibold">APIs</h3>
+      <p>The `/optimize` POST endpoint accepts JSON data (machines, jobs, optional total space) and returns optimized results in JSON format.</p>
+    </section>
+
+    <!-- Troubleshooting -->
+    <section class="space-y-8 mb-8">
+      <h2 class="text-2xl font-semibold">Troubleshooting</h2>
+      <h3 class="text-xl font-semibold">Common Issues & Solutions</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>Invalid Input:</strong> Ensure all required fields (machine power, cost, max time; job processing time) are numeric and non-negative.</li>
+        <li><strong>No Feasible Solution:</strong> Check if deadlines or space constraints are too restrictive; adjust lead time or total space.</li>
+        <li><strong>Chart/PDF Issues:</strong> Verify that Chart.js, html2canvas, and jsPDF are correctly loaded in the browser.</li>
+      </ul>
+      <h3 class="text-xl font-semibold">FAQs</h3>
+      <ul class="list-disc pl-6 space-y-2">
+        <li><strong>Why are some fields optional?</strong> Priority and lead time allow flexible scheduling but are not required for basic optimization.</li>
+        <li><strong>How is space handled?</strong> The system assumes default areas (50 sq units) and limits total assigned area unless specified.</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer class="text-center text-sm text-gray-600 mt-10 pb-6">
+    Created by <a href="mailto:pyjoshtech@gmail.com" class="text-blue-600 hover:underline">PYJOSH</a>
+  </footer>
+</body>
+</html>
