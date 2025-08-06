@@ -1,0 +1,7 @@
+Flask
+pulp
+numpy
+pandas
+openpyxl
+reportlab
+Pillow
